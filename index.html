@@ -1,0 +1,425 @@
+<!DOCTYPE html><html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Raspadinha do Pita — por Andre Pita</title>
+  <style>
+    :root{
+      --bg1:#060913; --bg2:#0a1024; --bg3:#0d1536;
+      --gold:#f7c948; --neon:#22c55e; --neon2:#16a34a; --pink:#ff4d9d; --cyan:#4dd3ff; --vio:#8b5cf6;
+      --panel:#0f172a; --text:#e5e7eb; --muted:#94a3b8; --ok:#86efac;
+      --shadow:0 18px 60px rgba(0,0,0,.45);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,"Noto Sans",sans-serif; color:var(--text);
+      background:
+        radial-gradient(1200px 600px at 15% -10%, #1a2550 0%, transparent 50%),
+        radial-gradient(1000px 500px at 85% -20%, #341a50 0%, transparent 50%),
+        linear-gradient(160deg,var(--bg1),var(--bg2) 40%,var(--bg3));
+      overflow-x:hidden;
+    }/* Partículas e chips animados */
+.sparkle, .chips {position:fixed; inset:0; pointer-events:none; mix-blend-mode:screen}
+.sparkle{opacity:.28}
+.sparkle i{position:absolute;width:3px;height:3px;border-radius:50%;background:linear-gradient(180deg,var(--cyan),var(--pink));box-shadow:0 0 12px #fff}
+@keyframes float {from{transform:translateY(0)} to{transform:translateY(-120vh)}}
+.chips i{position:absolute;width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 30% 30%, #ffd166, #fca311 60%, #c47f00);box-shadow:0 2px 10px rgba(0,0,0,.35)}
+
+.wrap{max-width:1200px;margin:0 auto;padding:24px}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:16px;justify-content:space-between;margin-bottom:16px}
+
+/* Título neon */
+.brand{display:flex;align-items:center;gap:16px}
+.title{
+  font-size:clamp(32px,5vw,64px); margin:0; font-weight:900; letter-spacing:.6px;
+  color:#fff; text-shadow: 0 0 6px #fff, 0 0 18px var(--cyan), 0 0 42px var(--pink), 0 0 72px var(--vio);
+  position:relative; isolation:isolate; animation:flicker 3.5s infinite;
+}
+.title::after{content:"";position:absolute;inset:-8px -16px;border-radius:28px;box-shadow:0 0 28px rgba(77,211,255,.35),0 0 60px rgba(255,77,157,.2);z-index:-1}
+@keyframes flicker{0%,19%,21%,23%,80%,100%{opacity:1}20%,22%{opacity:.78}}
+
+.panel{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 16px;display:flex;flex-wrap:wrap;align-items:center;gap:12px;box-shadow:var(--shadow)}
+.saldo{font-size:18px}.saldo strong{font-size:22px;color:#fff}
+
+.btn{appearance:none;border:0;border-radius:12px;padding:10px 14px;font-weight:800;cursor:pointer;letter-spacing:.3px;
+  background:linear-gradient(180deg,var(--neon),var(--neon2)); color:#021; box-shadow:0 0 24px rgba(34,197,94,.35), 0 0 60px rgba(34,197,94,.18); transition:transform .06s ease, filter .2s}
+.btn:active{transform:translateY(1px)}
+.btn.secondary{background:#111827;color:#e5e7eb;border:1px solid rgba(255,255,255,.1);box-shadow:none}
+.btn.tier{background:linear-gradient(180deg,#60a5fa,#3b82f6);color:#031126}
+.btn.tier.active{box-shadow:0 0 18px rgba(96,165,250,.5)}
+
+.game{display:grid;grid-template-columns:1fr;gap:16px;margin-top:18px}
+@media(min-width:1000px){.game{grid-template-columns:2fr 1fr}}
+
+.card{position:relative;display:grid;grid-template-rows:auto 1fr;gap:14px;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));
+  border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:16px;box-shadow:var(--shadow)}
+
+.ticket{position:relative;border-radius:18px;overflow:hidden;background:radial-gradient(600px 160px at 50% 0%, rgba(247,201,72,.18), transparent 40%), #0a1220;border:1px solid rgba(247,201,72,.25);animation:pulse 4s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 rgba(247,201,72,.0)}50%{box-shadow:0 0 24px rgba(247,201,72,.25)}}
+.ticket-inner{padding:16px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.cell{display:grid;place-items:center;aspect-ratio:1/1;border-radius:12px;background:linear-gradient(180deg,rgba(247,201,72,.12),rgba(255,255,255,.04));
+  border:1px solid rgba(247,201,72,.28);font-weight:800;font-size:clamp(22px,4vw,28px);color:#fef3c7;text-shadow:0 1px 0 rgba(0,0,0,.4)}
+.cell .hidden{opacity:.9}
+.cell .val{display:none;font-variant-numeric:tabular-nums;letter-spacing:.2px}
+.cell.revealed .hidden{display:none}
+.cell.revealed .val{display:block}
+
+/* Camada raspável */
+.scratch-wrap{position:absolute;inset:0}
+canvas#scratch{position:absolute;inset:0;width:100%;height:100%;display:block}
+.scratch-hint{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
+.hint-badge{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.18);padding:8px 12px;border-radius:999px;color:#e5e7eb;font-size:14px}
+
+.message{min-height:24px}
+.message.win{color:var(--ok)}
+.message.lose{color:#fca5a5}
+
+/* Depósito / PIX */
+.modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.55);z-index:50}
+.modal.open{display:grid}
+.modal-card{background:#0b1220;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:18px;max-width:460px;width:92%;box-shadow:var(--shadow)}
+.modal-card h3{margin:0 0 8px 0}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.input{flex:1;background:#0f172a;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px;color:#e5e7eb;font-size:14px;overflow:auto;white-space:nowrap}
+.icon-btn{appearance:none;border:0;border-radius:10px;padding:10px 12px;cursor:pointer;background:#111827;color:#e5e7eb;border:1px solid rgba(255,255,255,.12)}
+.qr{display:grid;place-items:center;margin:10px 0}
+.qr canvas{width:220px;height:220px;border-radius:12px;border:1px solid rgba(255,255,255,.1)}
+
+/* Testemunhos */
+.testimonials{margin-top:22px;display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:800px){.testimonials{grid-template-columns:repeat(3,1fr)}}
+.tcard{background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px;box-shadow:var(--shadow)}
+.tname{font-weight:800}
+.tmeta{font-size:12px;color:var(--muted)}
+
+  </style>
+</head>
+<body>
+  <div class="sparkle" id="sparkle"></div>
+  <div class="chips" id="chips"></div>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <h1 class="title">RASPADINHA DO PITA</h1>
+        <span class="chip" style="display:none"></span>
+      </div>
+      <div class="panel">
+        <div class="saldo">Saldo: <strong id="saldo">R$ 0,00</strong></div>
+        <div class="tiers">
+          <button class="btn tier" data-tier="2">R$ 2</button>
+          <button class="btn tier active" data-tier="5">R$ 5</button>
+          <button class="btn tier" data-tier="10">R$ 10</button>
+          <button class="btn tier" data-tier="100">R$ 100</button>
+        </div>
+        <button id="newBtn" class="btn">Comprar cartela</button>
+        <button id="depositBtn" class="btn secondary" title="Depositar via PIX">Depositar R$ 100</button>
+      </div>
+    </header><section class="game">
+  <div class="card">
+    <div class="ticket" id="ticket">
+      <div class="ticket-inner">
+        <div class="grid" id="grid"></div>
+      </div>
+      <!-- Camada raspável única -->
+      <div class="scratch-wrap">
+        <canvas id="scratch"></canvas>
+        <div class="scratch-hint"><div class="hint-badge">Passe o dedo/mouse para raspar • Revele ≥ 50%</div></div>
+      </div>
+    </div>
+    <div class="message" id="message"></div>
+
+    <div class="testimonials" id="testimonials">
+      <div class="tcard"><div class="tname">Bruna S.</div><div class="tmeta">Fortaleza • 2R</div><div>Não ganhei muito, mas a raspagem é viciante 🤩</div></div>
+      <div class="tcard"><div class="tname">Carlos M.</div><div class="tmeta">São Paulo • 5R</div><div>Deu pra pagar umas contas esse mês 👏</div></div>
+      <div class="tcard"><div class="tname">Rafa M.</div><div class="tmeta">Belo Horizonte • 10R</div><div>Consegui até trocar de carro 🚗💨</div></div>
+      <div class="tcard"><div class="tname">Gabi M.</div><div class="tmeta">Recife • 2R</div><div>Lucrei e já investi no mercado 📈</div></div>
+      <div class="tcard"><div class="tname">João P.</div><div class="tmeta">Curitiba • 100R</div><div>Uma cartela salvou meu mês. Top!</div></div>
+      <div class="tcard"><div class="tname">Aline K.</div><div class="tmeta">Belém • 5R</div><div>Curti as luzes, parece cassino real ✨</div></div>
+    </div>
+  </div>
+
+  <aside class="card">
+    <h3 style="margin:4px 0 0">Sala VIP</h3>
+    <div class="aside-box">
+      <div class="chip">💡 Desenvolvido por <strong>Andre Pita</strong></div>
+    </div>
+  </aside>
+</section>
+
+  </div>  <!-- Modal depósito PIX -->  <div class="modal" id="pixModal" aria-hidden="true">
+    <div class="modal-card">
+      <h3>Depósito via PIX — R$ 100,00</h3>
+      <div class="qr"><canvas id="qrCanvas" width="220" height="220" aria-label="QR Code PIX"></canvas></div>
+      <div class="row" style="margin:6px 0 8px">
+        <div class="input" id="pixKey">Chave PIX: 15365092724</div>
+        <button class="icon-btn" id="copyKey">Copiar</button>
+      </div>
+      <div class="row" style="margin-bottom:8px">
+        <div class="input" id="payloadBox" title="Código copia e cola PIX"></div>
+        <button class="icon-btn" id="copyPayload">Copiar</button>
+      </div>
+      <div class="row" style="justify-content:flex-end;gap:8px">
+        <button class="icon-btn" id="closePix">Fechar</button>
+        <button class="btn" id="confirmDeposit">Confirmar depósito (demo)</button>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px">O botão "Confirmar depósito" adiciona R$100 ao saldo para fins de demonstração.</div>
+    </div>
+  </div><script>
+(() => {
+  // ================== CONFIG ==================
+  const START_BALANCE = 100;   // Saldo inicial
+  const REVEAL_NEEDED = 0.50;  // % de revelação necessária para validar
+  const MAX_PER_VALUE = 3;     // Limite por valor na cartela
+  const STORAGE_KEY   = 'saldoPita_v5';
+  const PIX_KEY       = '15365092724';
+  const PIX_NAME      = 'Andre Pita';
+  const PIX_CITY      = 'BRASIL';
+  const PIX_AMOUNT    = '100.00';
+
+  // Tiers de aposta e prêmios (ranges + pesos para garantir lucro da plataforma)
+  const TIER_CONFIG = {
+    2: { cost:2,  max:2000, winRate:0.06, weights: tierWeights(2) },
+    5: { cost:5,  max:5000, winRate:0.05, weights: tierWeights(5) },
+    10:{ cost:10, max:10000, winRate:0.045, weights: tierWeights(10) },
+    100:{cost:100,max:1000000, winRate:0.02, weights: tierWeights(100) }
+  };
+
+  function tierWeights(cost){
+    // buckets: retorno relativo ao custo
+    // maioria < 0.5x; raríssimo > 1x
+    if (cost===100) return [
+      {cap:0.25, w:55}, {cap:0.5, w:28}, {cap:1, w:15}, // 98% até 1x
+      {cap:5, w:1.7}, {cap:20, w:0.25}, {cap:10000, w:0.05} // 2% acima de 1x (ultra raro)
+    ];
+    if (cost===10) return [
+      {cap:0.25, w:58}, {cap:0.5, w:28}, {cap:1, w:12.5}, // 98.5% até 1x
+      {cap:3, w:1.2}, {cap:10, w:0.3} // raros acima
+    ];
+    if (cost===5) return [
+      {cap:0.25, w:60}, {cap:0.5, w:27}, {cap:1, w:11.5},
+      {cap:3, w:1.2}, {cap:10, w:0.3}
+    ];
+    // cost 2
+    return [ {cap:0.25, w:62}, {cap:0.5, w:27}, {cap:1, w:10.5}, {cap:5, w:0.45} ];
+  }
+
+  // Gera lista discreta de prêmios para um tier, respeitando o máximo
+  function prizesForTier(cost, max){
+    // valores discretos com foco em moedas reais (1,2,3,5,10,20,50, etc.) até o máximo permitido
+    const base = [1,2,3,5,10,20,25,30,40,50,75,100,150,200,250,300,400,500,750,1000];
+    const extra = [];
+    let v = 1500; while (v <= Math.min(max, 10000)) { extra.push(v); v *= 2; }
+    if (max > 10000) extra.push(20000,50000,100000,250000,500000,1000000);
+    return [...base, ...extra].filter(x => x <= max);
+  }
+
+  // Calcula pesos por prêmio usando buckets relativos ao custo
+  function prizeWeights(cost, max){
+    const vals = prizesForTier(cost, max);
+    const buckets = TIER_CONFIG[cost].weights;
+    const weights = vals.map(v => {
+      const mult = v/cost; // retorno relativo
+      // encontra bucket de menor cap >= mult
+      const b = buckets.find(bk => mult <= bk.cap) || buckets[buckets.length-1];
+      // ajuste: penaliza progressivamente com o tamanho do prêmio
+      const penalty = 1 / (1 + Math.log10(Math.max(1, v)) );
+      return b.w * penalty;
+    });
+    return {vals, weights};
+  }
+
+  // ================== STATE/DOM ==================
+  const elSaldo   = document.getElementById('saldo');
+  const newBtn    = document.getElementById('newBtn');
+  const depositBtn= document.getElementById('depositBtn');
+  const grid      = document.getElementById('grid');
+  const message   = document.getElementById('message');
+  const ticketEl  = document.getElementById('ticket');
+  const canvas    = document.getElementById('scratch');
+  const ctx       = canvas.getContext('2d', { willReadFrequently:true });
+  const tierBtns  = Array.from(document.querySelectorAll('.btn.tier'));
+
+  const pixModal  = document.getElementById('pixModal');
+  const qrCanvas  = document.getElementById('qrCanvas');
+  const payloadBox= document.getElementById('payloadBox');
+  const copyKey   = document.getElementById('copyKey');
+  const copyPayload= document.getElementById('copyPayload');
+  const closePix  = document.getElementById('closePix');
+  const confirmDeposit = document.getElementById('confirmDeposit');
+
+  let saldo = Number(localStorage.getItem(STORAGE_KEY) || START_BALANCE);
+  let board = [];        // 9 valores
+  let winningPrize = 0;  // 0 se perder
+  let revealed = false;
+  let activeTier = 5;
+
+  // ======= Áudio (WebAudio) =======
+  const AC = (window.AudioContext || window.webkitAudioContext);
+  let audioCtx = null;
+  function ensureAudio(){ if(!audioCtx) audioCtx = new AC(); }
+  function playScratch(){ ensureAudio(); const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.type='triangle'; o.frequency.setValueAtTime(80+Math.random()*60, audioCtx.currentTime); g.gain.setValueAtTime(0.0001, audioCtx.currentTime); g.gain.linearRampToValueAtTime(0.05, audioCtx.currentTime+.05); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+.25); o.connect(g).connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+.26); }
+  function playWin(){ ensureAudio(); const o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.type='sine'; o.frequency.setValueAtTime(660, audioCtx.currentTime); g.gain.setValueAtTime(0.0001, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.08, audioCtx.currentTime+.02); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+.6); o.connect(g).connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+.62); }
+  function playLose(){ ensureAudio(); const o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.type='sawtooth'; o.frequency.setValueAtTime(110, audioCtx.currentTime); g.gain.setValueAtTime(0.02, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+.25); o.connect(g).connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+.26); }
+
+  // ======= Utils =======
+  function formatBRL(n){ return n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+  function updateSaldo(){ elSaldo.textContent = formatBRL(saldo); localStorage.setItem(STORAGE_KEY, String(saldo)); newBtn.disabled = saldo < TIER_CONFIG[activeTier].cost; }
+  function weightedPick(values, weights){ let total=0; for(let w of weights) total+=w; let r=Math.random()*total; for(let i=0;i<values.length;i++){ if(r < weights[i]) return values[i]; r-=weights[i]; } return values[0]; }
+  function shuffle(arr){ for (let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]];} return arr; }
+
+  // ======= PIX EMV payload + QR local =======
+  function emv(k,v){ v=String(v); const id=k.padStart(2,'0'); const len=String(v.length).padStart(2,'0'); return id+len+v; }
+  function crc16(payload){ let crc = 0xFFFF; for (let i=0;i<payload.length;i++){ crc ^= payload.charCodeAt(i) << 8; for (let j=0;j<8;j++) crc = (crc & 0x8000) ? (crc << 1) ^ 0x1021 : (crc << 1); crc &= 0xFFFF; } return crc.toString(16).toUpperCase().padStart(4,'0'); }
+  function buildPixPayload(){ const gui = emv('00','br.gov.bcb.pix'); const key = emv('01', PIX_KEY); const mai = emv('26', gui + key); const pfi = emv('00','01'); const poi = emv('01','11'); const mcc = emv('52','0000'); const cur = emv('53','986'); const amt = emv('54', PIX_AMOUNT); const cty = emv('58','BR'); const nm  = emv('59', PIX_NAME); const city= emv('60', PIX_CITY); const txid= emv('62', emv('05','RASPAPITA')); const noCRC = pfi + poi + mai + mcc + cur + amt + cty + nm + city + txid + '6304'; const crc = crc16(noCRC); return noCRC + crc; }
+
+  // QR minimalista (versão reduzida de encoder numérico/alfa)
+  // Implementa via canvas: usamos um encoder simples baseado em qrcode-generator (compactado)
+  // Para fins de demo, tamanho fixo (versão automática / ECC M)
+  // --- Início do encoder curto ---
+  /* eslint-disable */
+  const QR = (function(){
+    // qrcode-generator v1 (trechos essenciais) – simplificado para caber
+    // Fonte original: https://github.com/kazuhikoarase/qrcode-generator (MIT)
+    function QR8bitByte(data){this.data=data;this.parsed=[];for(let i=0;i<data.length;i++){this.parsed.push(data.charCodeAt(i));}}
+    QR8bitByte.prototype={getLength:function(){return this.parsed.length},write:function(buff){for(let i=0;i<this.parsed.length;i++){buff.put(this.parsed[i],8);}}};
+    function QRBitBuffer(){this.buffer=[];this.length=0;} QRBitBuffer.prototype={get:function(i){return ((this.buffer[Math.floor(i/8)]>>> (7 - i % 8)) &1)==1},put:function(num,length){for(let i=0;i<length;i++){this.putBit(((num>>> (length - i -1))&1)==1)}},putBit:function(bit){const bufIndex=Math.floor(this.length/8); if(this.buffer.length<=bufIndex){this.buffer.push(0);} if(bit){this.buffer[bufIndex]|=(0x80>>> (this.length%8));} this.length++;}};
+    const PAD0=0xEC, PAD1=0x11;
+    function QRPolynomial(num,shift){if(num.length==undefined){throw new Error(num.length+'/'+shift);} let offset=0; while(offset<num.length&&num[offset]==0) offset++; this.num=new Array(num.length-offset+shift); for(let i=0;i<num.length-offset;i++){this.num[i]=num[i+offset];}}
+    QRPolynomial.prototype={get:function(i){return this.num[i]},getLength:function(){return this.num.length},multiply:function(e){const num=new Array(this.getLength()+e.getLength()-1); for(let i=0;i<this.getLength();i++){for(let j=0;j<e.getLength();j++){num[i+j]^=QRMath.gexp(QRMath.glog(this.get(i))+QRMath.glog(e.get(j)));}} return new QRPolynomial(num,0)},mod:function(e){if(this.getLength()-e.getLength()<0) return this; const ratio=QRMath.glog(this.get(0))-QRMath.glog(e.get(0)); const num=new Array(this.getLength()); for(let i=0;i<this.getLength();i++) num[i]=this.get(i); for(let i=0;i<e.getLength();i++) num[i]^=QRMath.gexp(QRMath.glog(e.get(i))+ratio); return new QRPolynomial(num,0).mod(e)}};
+    const QRMath={glog:function(n){if(n<1) throw new Error('glog'); return LOG_TABLE[n]}, gexp:function(n){while(n<0) n+=255; while(n>=256) n-=255; return EXP_TABLE[n]}};
+    const EXP_TABLE=new Array(256); const LOG_TABLE=new Array(256); for(let i=0;i<8;i++) EXP_TABLE[i]=1<<i; for(let i=8;i<256;i++) EXP_TABLE[i]=EXP_TABLE[i-4]^EXP_TABLE[i-5]^EXP_TABLE[i-6]^EXP_TABLE[i-8]; for(let i=0;i<256;i++) LOG_TABLE[EXP_TABLE[i]]=i;
+    const RS_BLOCK_TABLE=[[1,26,19],[1,44,34],[1,70,55],[1,100,80],[1,134,108],[2,86,68],[2,98,78],[2,121,97]]; // versões pequenas ECC M
+    function getRSBlocks(type){return [RS_BLOCK_TABLE[type]]}
+    function QRRSBlock(totalCount,dataCount){this.totalCount=totalCount;this.dataCount=dataCount}
+    function QRMode(){} QRMode.MODE_8BIT_BYTE=4; const QRErrorCorrectLevel={M:0};
+    function QRMaskPattern(){} QRMaskPattern.PATTERN000=0;
+    function QRModel(type){this.typeNumber=type; this.modules=null; this.moduleCount=0; this.dataList=[];}
+    QRModel.prototype={addData:function(data){this.dataList.push(new QR8bitByte(data));},isDark:function(row,col){return this.modules[row][col]},make:function(){this.moduleCount=RS_BLOCK_TABLE[this.typeNumber][1]; this.modules=new Array(this.moduleCount); for(let i=0;i<this.moduleCount;i++){this.modules[i]=new Array(this.moduleCount); for(let j=0;j<this.moduleCount;j++){this.modules[i][j]=null}} this.setupPositionProbePattern(0,0); this.setupPositionProbePattern(this.moduleCount-7,0); this.setupPositionProbePattern(0,this.moduleCount-7); this.mapData(this.createData());},setupPositionProbePattern:function(row,col){for(let r=-1;r<=7;r++){if(row+r<=-1||this.moduleCount<=row+r) continue; for(let c=-1;c<=7;c++){if(col+c<=-1||this.moduleCount<=col+c) continue; this.modules[row+r][col+c]=(0<=r&&r<=6&&(c==0||c==6))||(0<=c&&c<=6&&(r==0||r==6))||(2<=r&&r<=4&&2<=c&&c<=4)} }},createData:function(){const rs=getRSBlocks(this.typeNumber); let buffer=new QRBitBuffer(); for(let i=0;i<this.dataList.length;i++){const data=this.dataList[i]; buffer.put(QRMode.MODE_8BIT_BYTE,4); buffer.put(data.getLength(),8); data.write(buffer);} let totalDataCount=rs[0][2]; // simplificado
+      // padding
+      if(buffer.length+4<=totalDataCount*8) buffer.put(0,4); while(buffer.length%8!=0) buffer.put(false,1); let bytes=[]; for(let i=0;i<buffer.length/8;i++) bytes.push(buffer.buffer[i]); let pad=true; while(bytes.length<totalDataCount){bytes.push(pad?PAD0:PAD1); pad=!pad;} return bytes;},mapData:function(data){let inc=-1,row=this.moduleCount-1,bitIndex=7,byteIndex=0; for(let col=this.moduleCount-1; col>0; col-=2){ if(col==6) col--; for(;;){ for(let c=0;c<2;c++){ if(this.modules[row][col-c]==null){ let dark=false; if(byteIndex<data.length){ dark = ((data[byteIndex]>>>bitIndex) &1)==1; } this.modules[row][col-c]=dark; bitIndex--; if(bitIndex==-1){ byteIndex++; bitIndex=7; } } } row+=inc; if(row<0||this.moduleCount<=row){ row-=inc; inc=-inc; break; } } }};
+    function bestType(len){ if (len<20) return 0; if (len<38) return 1; if (len<61) return 2; if (len<90) return 3; if (len<122) return 4; if (len<154) return 5; if (len<182) return 6; return 7; }
+    return { make:function(text){ const t = bestType(text.length); const q = new QRModel(t); q.addData(text); q.make(); return q; } };
+  })();
+  /* eslint-enable */
+  // --- Fim do encoder curto ---
+
+  function drawQR(text){
+    const q = QR.make(text); const size = q.modules.length; const ctxq = qrCanvas.getContext('2d');
+    ctxq.fillStyle = '#fff'; ctxq.fillRect(0,0,qrCanvas.width,qrCanvas.height);
+    const scale = Math.floor(Math.min(qrCanvas.width, qrCanvas.height)/size);
+    ctxq.fillStyle = '#000';
+    for(let r=0;r<size;r++){
+      for(let c=0;c<size;c++){
+        if(q.modules[r][c]) ctxq.fillRect(c*scale, r*scale, scale, scale);
+      }
+    }
+  }
+
+  // ======= Sorteio garantindo lucro (EV < custo) =======
+  function getPrizeDistribution(cost){
+    const {max} = TIER_CONFIG[cost];
+    const {vals, weights} = prizeWeights(cost, max);
+    return {vals, weights};
+  }
+
+  function pickWinningPrize(cost){
+    const {vals, weights} = getPrizeDistribution(cost);
+    return weightedPick(vals, weights);
+  }
+
+  function wouldCreateTriple(vals, v){ return vals.filter(x=>x===v).length + 1 >= 3; }
+
+  function genWinningBoard(cost){
+    const prize = pickWinningPrize(cost);
+    const cells = Array.from({length:9}, (_,i)=>i); shuffle(cells);
+    const winPos = cells.slice(0,3); // exatamente 3 iguais
+    const counts = {[prize]:3};
+    const vals = Array(9).fill(null);
+    for (let p of winPos) vals[p] = prize;
+
+    const {vals: pool, weights} = getPrizeDistribution(cost);
+    for (let idx of cells.slice(3)){
+      let v; let tries=0;
+      do{
+        v = weightedPick(pool, weights); tries++;
+      } while ( (counts[v]||0) >= (v===prize ? MAX_PER_VALUE : Math.min(MAX_PER_VALUE-1,2)) || wouldCreateTriple(vals, v) && tries < 120 );
+      vals[idx]=v; counts[v]=(counts[v]||0)+1;
+    }
+    return {vals, prize};
+  }
+
+  function genLosingBoard(cost){
+    const counts = {}; const vals = Array(9).fill(null);
+    const {vals: pool, weights} = getPrizeDistribution(cost);
+    for (let i=0;i<9;i++){
+      let v; let tries=0;
+      do{ v = weightedPick(pool, weights); tries++; } while ( (counts[v]||0) >= 2 || wouldCreateTriple(vals, v) && tries < 120 );
+      vals[i]=v; counts[v]=(counts[v]||0)+1;
+    }
+    return {vals, prize:0};
+  }
+
+  function generateBoard(cost){
+    const isWin = Math.random() < TIER_CONFIG[cost].winRate;
+    return isWin ? genWinningBoard(cost) : genLosingBoard(cost);
+  }
+
+  function renderGrid(hidden=true){
+    grid.innerHTML = '';
+    board.forEach(v => {
+      const cell = document.createElement('div');
+      cell.className = 'cell' + (hidden ? '' : ' revealed');
+      const hiddenSpan = document.createElement('span'); hiddenSpan.className='hidden'; hiddenSpan.textContent='💰';
+      const valSpan = document.createElement('span'); valSpan.className='val'; valSpan.textContent = formatBRL(v);
+      cell.appendChild(hiddenSpan); cell.appendChild(valSpan); grid.appendChild(cell);
+    });
+  }
+
+  // ======= Scratch layer =======
+  const scratch = { is:false, brush:28, last:null };
+  function setCanvasSize(){ const rect = ticketEl.getBoundingClientRect(); const w = Math.round(rect.width), h = Math.round(rect.height); const dpr = Math.max(1, Math.min(2, window.devicePixelRatio||1)); canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr); canvas.style.width = w+'px'; canvas.style.height = h+'px'; ctx.setTransform(dpr,0,0,dpr,0,0); }
+  function drawScratchLayer(){ const {width:w, height:h} = canvas; const g = ctx.createLinearGradient(0,0,w,h); g.addColorStop(0,'#aab2bf'); g.addColorStop(1,'#707986'); ctx.fillStyle = g; ctx.fillRect(0,0,w,h); ctx.save(); ctx.globalAlpha=.16; ctx.fillStyle='#000'; for (let y=24;y<h;y+=34){ for (let x=24;x<w;x+=180){ ctx.fillText('Raspe aqui', x, y); } } ctx.restore(); }
+  function distance(a,b){ const dx=a.x-b.x, dy=a.y-b.y; return Math.hypot(dx,dy); }
+  function getPt(e){ const r=canvas.getBoundingClientRect(); const t=e.touches?e.touches[0]:(e.changedTouches?e.changedTouches[0]:null); const cx=t?t.clientX:e.clientX; const cy=t?t.clientY:e.clientY; return {x:cx-r.left,y:cy-r.top}; }
+  function scratchAt(pt){ ctx.save(); ctx.globalCompositeOperation='destination-out'; const grad=ctx.createRadialGradient(pt.x,pt.y,0,pt.x,pt.y,scratch.brush); grad.addColorStop(0,'rgba(0,0,0,1)'); grad.addColorStop(1,'rgba(0,0,0,0)'); ctx.fillStyle=grad; ctx.beginPath(); ctx.arc(pt.x,pt.y,scratch.brush,0,Math.PI*2); ctx.fill(); ctx.restore(); playScratch(); }
+  function onDown(e){ if(revealed) return; scratch.is=true; scratch.last=getPt(e); scratchAt(scratch.last);} 
+  function onMove(e){ if(!scratch.is||revealed) return; const pt=getPt(e); const steps=Math.max(1,Math.round(distance(pt,scratch.last)/8)); for(let i=1;i<=steps;i++){ const t=i/steps; scratchAt({x:scratch.last.x+(pt.x-scratch.last.x)*t,y:scratch.last.y+(pt.y-scratch.last.y)*t}); } scratch.last=pt; }
+  function onUp(){ if(!scratch.is||revealed) return; scratch.is=false; checkReveal(); }
+  function checkReveal(){ const step=6; const {width:w,height:h}=canvas; const d=ctx.getImageData(0,0,w,h).data; let trans=0,tot=0; for(let y=0;y<h;y+=step){ for(let x=0;x<w;x+=step){ const a=d[(y*w+x)*4+3]; tot++; if(a<8) trans++; } } const ratio=trans/tot; if(ratio>=REVEAL_NEEDED) revealAll(); }
+  function revealAll(){ if(revealed) return; revealed=true; document.querySelectorAll('.cell').forEach(c=>c.classList.add('revealed')); canvas.style.transition='opacity .35s ease'; canvas.style.opacity='0'; setTimeout(()=>{ ctx.clearRect(0,0,canvas.width,canvas.height); },400); if (winningPrize>0){ saldo+=winningPrize; updateSaldo(); message.className='message win'; message.textContent=`Parabéns! Você ganhou ${formatBRL(winningPrize)}!`; playWin(); confetti(); } else { message.className='message lose'; message.textContent='Não foi desta vez…'; playLose(); } }
+
+  // ======= Confete e adereços =======
+  function confetti(){ const s=document.getElementById('sparkle'); for(let i=0;i<40;i++){ const el=document.createElement('i'); el.style.left=Math.random()*100+'%'; el.style.top='110vh'; el.style.animation='float '+(3+Math.random()*2)+'s linear forwards'; s.appendChild(el); setTimeout(()=>el.remove(), 6000); } }
+  (function seedBG(){ const c=document.getElementById('chips'); for(let i=0;i<24;i++){ const el=document.createElement('i'); el.style.left=Math.random()*100+'%'; el.style.top= (20+Math.random()*70)+'%'; c.appendChild(el); } })();
+
+  // ======= Flow =======
+  function newTicket(){ const cfg=TIER_CONFIG[activeTier]; if (saldo < cfg.cost){ message.className='message'; message.textContent='Saldo insuficiente para comprar esta cartela.'; return; } saldo -= cfg.cost; updateSaldo(); message.className='message'; message.textContent='Raspe para revelar os valores. Encontre 3 iguais!'; const g=generateBoard(activeTier); board=g.vals; winningPrize=g.prize; renderGrid(true); revealed=false; canvas.style.opacity='1'; setCanvasSize(); drawScratchLayer(); }
+
+  // Depósito (local QR)
+  function openPix(){ const payload = buildPixPayload(); payloadBox.textContent = payload; drawQR(payload); pixModal.classList.add('open'); pixModal.setAttribute('aria-hidden','false'); }
+  function closeModal(){ pixModal.classList.remove('open'); pixModal.setAttribute('aria-hidden','true'); }
+
+  // Init
+  updateSaldo();
+  newBtn.addEventListener('click', newTicket);
+  depositBtn.addEventListener('click', openPix);
+  closePix.addEventListener('click', closeModal);
+  copyKey.addEventListener('click', ()=>{ navigator.clipboard.writeText('Chave PIX: '+PIX_KEY); copyKey.textContent='Copiado!'; setTimeout(()=>copyKey.textContent='Copiar',1200); });
+  copyPayload.addEventListener('click', ()=>{ navigator.clipboard.writeText(payloadBox.textContent); copyPayload.textContent='Copiado!'; setTimeout(()=>copyPayload.textContent='Copiar',1200); });
+  confirmDeposit.addEventListener('click', ()=>{ saldo += 100; updateSaldo(); closeModal(); });
+
+  tierBtns.forEach(b=> b.addEventListener('click', ()=>{ tierBtns.forEach(x=>x.classList.remove('active')); b.classList.add('active'); activeTier = Number(b.dataset.tier); updateSaldo(); }));
+
+  canvas.addEventListener('mousedown', onDown); canvas.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp);
+  canvas.addEventListener('touchstart', e=>{e.preventDefault(); onDown(e);},{passive:false});
+  canvas.addEventListener('touchmove',  e=>{e.preventDefault(); onMove(e);},{passive:false});
+  canvas.addEventListener('touchend',   e=>{e.preventDefault(); onUp(e);},{passive:false});
+  window.addEventListener('resize', ()=>{ const was=revealed; setCanvasSize(); if(!was) drawScratchLayer(); });
+
+  // Cartela inicial default
+  if (saldo >= TIER_CONFIG[activeTier].cost) newTicket();
+})();
+</script></body>
+</html>
